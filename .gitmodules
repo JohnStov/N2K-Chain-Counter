@@ -1,0 +1,6 @@
+[submodule "lib/arduino-timer"]
+	path = lib/arduino-timer
+	url = https://github.com/JohnStov/arduino-timer
+[submodule "lib/LiquidCrystal_I2C"]
+	path = lib/LiquidCrystal_I2C
+	url = https://github.com/JohnStov/LiquidCrystal_I2C
