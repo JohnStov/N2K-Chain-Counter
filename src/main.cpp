@@ -11,7 +11,7 @@
 #define printByte(args)  print(args,BYTE);
 #endif
 
-LiquidCrystal_I2C lcd(0x20,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 DirectionIndicator indicator;
 auto timer = timer_create_default();
 
