@@ -13,3 +13,9 @@
 [submodule "lib/due_can"]
 	path = lib/due_can
 	url = https://github.com/JohnStov/due_can
+[submodule "lib/Adafruit_FRAM_I2C"]
+	path = lib/Adafruit_FRAM_I2C
+	url = https://github.com/adafruit/Adafruit_FRAM_I2C
+[submodule "lib/Adafruit_BusIO"]
+	path = lib/Adafruit_BusIO
+	url = https://github.com/adafruit/Adafruit_BusIO

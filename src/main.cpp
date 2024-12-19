@@ -4,10 +4,13 @@
 #include <LiquidCrystal_I2C.h>
 #include <direction_indicator.h>
 #include <arduino-timer.h>
+#include "persistent_data.h"
 
 LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 DirectionIndicator indicator;
 auto timer = timer_create_default();
+
+PersistentData persistent_data;
 
 bool switch_direction(void *)
 {
@@ -23,6 +26,17 @@ bool switch_direction(void *)
     break;
   }
 
+  return true;
+}
+
+bool tick_seconds(void*)
+{
+  auto secs = persistent_data.get_total_seconds_elapsed();
+  char msg[20];
+  sprintf(msg, "secs elapsed = %lu", secs);
+  lcd.setCursor(0, 1);
+  lcd.print(msg);
+  persistent_data.set_total_seconds_elapsed(secs + 1);
   return true;
 }
 
@@ -45,6 +59,7 @@ void OnN2kOpen() {
 void setup() {
   lcd.init();                      // initialize the lcd 
   indicator.begin(&lcd);
+  persistent_data.begin(0x50, &Wire1);
 
   lcd.backlight();
   lcd.home();
@@ -52,6 +67,7 @@ void setup() {
 
   switch_direction(NULL);
   timer.every(20000, switch_direction);
+  timer.every(1000, tick_seconds);
 
   // Set Product information
   NMEA2000.SetProductInformation("00000001", // Manufacturer's Model serial code
