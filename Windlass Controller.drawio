@@ -262,10 +262,10 @@
         <mxCell id="lS47R74NGie7x5FfK5GM-61" value="D7" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="300" y="360" width="60" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="lS47R74NGie7x5FfK5GM-62" value="CAN" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="lS47R74NGie7x5FfK5GM-62" value="CAN0" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="430" y="360" width="60" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="lS47R74NGie7x5FfK5GM-63" value="&lt;div&gt;I2C&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="lS47R74NGie7x5FfK5GM-63" value="&lt;div&gt;I2C1&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="490" y="465" width="60" height="30" as="geometry" />
         </mxCell>
       </root>
