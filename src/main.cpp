@@ -5,6 +5,7 @@
 #include <direction_indicator.h>
 #include <arduino-timer.h>
 #include "persistent_data.h"
+#include <ctime>
 
 LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 DirectionIndicator indicator;
@@ -29,6 +30,9 @@ bool switch_direction(void *)
   return true;
 }
 
+
+bool pin10state = LOW;
+
 bool tick_seconds(void*)
 {
   auto secs = persistent_data.get_total_seconds_elapsed();
@@ -37,6 +41,10 @@ bool tick_seconds(void*)
   lcd.setCursor(0, 1);
   lcd.print(msg);
   persistent_data.set_total_seconds_elapsed(secs + 1);
+  
+  pin10state = !pin10state;
+  digitalWrite(10, pin10state);
+
   return true;
 }
 
@@ -56,15 +64,36 @@ void OnN2kOpen() {
   WindlassScheduler.UpdateNextTime();
 }
 
+void HandleNMEA2000Msg(const tN2kMsg &N2kMsg) {
+  if (N2kMsg.PGN == 126992L)
+  {
+    unsigned char SID;
+    uint16_t SystemDate;
+    double SystemTime;
+    tN2kTimeSource TimeSource;
+    
+    if (ParseN2kSystemTime(N2kMsg,SID,SystemDate,SystemTime,TimeSource) ) {
+      int systemTimeInt = (int)SystemTime;
+      int hours = systemTimeInt / 3600;
+      int mins = (systemTimeInt - (hours * 3600)) / 60;
+      int secs = systemTimeInt - (hours * 3600) - (mins * 60);
+
+      char timeStr[18];
+      sprintf(timeStr, "%02d:%02d:%02d", hours, mins, secs);
+      lcd.home();
+      lcd.print(timeStr);
+    }
+  }
+}  
+
 void setup() {
   lcd.init();                      // initialize the lcd 
   indicator.begin(&lcd);
   persistent_data.begin(0x50, &Wire1);
+  pinMode(10, OUTPUT);
 
   lcd.backlight();
-  lcd.home();
-  lcd.print("Hello world...");
-
+  
   switch_direction(NULL);
   timer.every(20000, switch_direction);
   timer.every(1000, tick_seconds);
@@ -96,6 +125,9 @@ void setup() {
   NMEA2000.ExtendTransmitMessages(TransmitMessages);
   // Define OnOpen call back. This will be called, when CAN is open and system starts address claiming.
   NMEA2000.SetOnOpen(OnN2kOpen);
+
+  NMEA2000.SetMsgHandler(HandleNMEA2000Msg);
+
   NMEA2000.Open();
 
 }
