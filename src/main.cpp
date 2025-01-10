@@ -86,12 +86,48 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg) {
   }
 }  
 
+void check_buttons() {
+  if (digitalRead(14) == LOW) {
+    lcd.setCursor(2,2);
+    lcd.print("D ");
+  } else {
+    lcd.setCursor(0,2);
+    lcd.print("  ");
+  }
+  if (digitalRead(15) == LOW)  {
+   lcd.setCursor(0,2);
+    lcd.print("U ");
+  } else {
+   lcd.setCursor(2,2);
+    lcd.print("  ");
+  }
+  if (digitalRead(16) == LOW)  {
+    lcd.setCursor(6,2);
+    lcd.print("R ");
+  } else {
+    lcd.setCursor(4,2);
+    lcd.print("  ");
+  }
+  if (digitalRead(17) == LOW)  {
+    lcd.setCursor(4,2);
+    lcd.print("L ");
+  } else {
+    lcd.setCursor(6,2);
+    lcd.print("  ");
+  }
+}
+
 void setup() {
   lcd.init();                      // initialize the lcd 
   indicator.begin(&lcd);
   persistent_data.begin(0x50, &Wire1);
   pinMode(10, OUTPUT);
 
+  pinMode(14, INPUT_PULLUP);
+  pinMode(15, INPUT_PULLUP);
+  pinMode(16, INPUT_PULLUP);
+  pinMode(17, INPUT_PULLUP);
+  
   lcd.backlight();
   
   switch_direction(NULL);
@@ -130,6 +166,7 @@ void setup() {
 
   NMEA2000.Open();
 
+  Serial.write("Starting...\r\n");
 }
 
 void SendN2kWindlass();
@@ -137,6 +174,7 @@ void SendN2kWindlass();
 void loop() {
   indicator.tick();
   timer.tick();
+  check_buttons();
   SendN2kWindlass();
   NMEA2000.ParseMessages();
 }
