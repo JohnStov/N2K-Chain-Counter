@@ -3,17 +3,15 @@
 
 #include <LiquidCrystal_I2C.h>
 #include <direction_indicator.h>
-#include <arduino-timer.h>
 #include "persistent_data.h"
 #include <ctime>
 
 LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 DirectionIndicator indicator;
-auto timer = timer_create_default();
 
 PersistentData persistent_data;
 
-bool switch_direction(void *)
+bool switch_direction()
 {
   switch (indicator.get_direction())
   {
@@ -33,7 +31,7 @@ bool switch_direction(void *)
 
 bool pin10state = LOW;
 
-bool tick_seconds(void*)
+bool tick_seconds()
 {
   auto secs = persistent_data.get_total_seconds_elapsed();
   char msg[20];
@@ -58,10 +56,14 @@ const unsigned long TransmitMessages[] PROGMEM={128776L,128777L,128778L,0};
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
 tN2kSyncScheduler WindlassScheduler(false,10000,500);
+tN2kSyncScheduler ScrollScheduler(false,20000,0);
+tN2kSyncScheduler SecondsScheduler(false,1000,0);
 
 void OnN2kOpen() {
   // Start schedulers now.
   WindlassScheduler.UpdateNextTime();
+  ScrollScheduler.UpdateNextTime();
+  SecondsScheduler.UpdateNextTime();
 }
 
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg) {
@@ -86,43 +88,76 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg) {
   }
 }  
 
-void check_buttons() {
+void handle_buttons() {
   if (digitalRead(14) == LOW) {
     lcd.setCursor(2,2);
-    lcd.print("D ");
+    lcd.print("D");
   } else {
-    lcd.setCursor(0,2);
-    lcd.print("  ");
+    lcd.setCursor(2,2);
+    lcd.print(" ");
   }
   if (digitalRead(15) == LOW)  {
    lcd.setCursor(0,2);
-    lcd.print("U ");
+    lcd.print("U");
   } else {
-   lcd.setCursor(2,2);
-    lcd.print("  ");
+   lcd.setCursor(0,2);
+    lcd.print(" ");
   }
   if (digitalRead(16) == LOW)  {
     lcd.setCursor(6,2);
-    lcd.print("R ");
+    lcd.print("R");
   } else {
-    lcd.setCursor(4,2);
-    lcd.print("  ");
+    lcd.setCursor(6,2);
+    lcd.print(" ");
   }
   if (digitalRead(17) == LOW)  {
     lcd.setCursor(4,2);
-    lcd.print("L ");
+    lcd.print("L");
   } else {
-    lcd.setCursor(6,2);
-    lcd.print("  ");
+    lcd.setCursor(4,2);
+    lcd.print(" ");
   }
+
+  if (digitalRead(2) == HIGH) {
+    lcd.setCursor(0,3);
+    lcd.print("2");
+  } else {
+    lcd.setCursor(0,3);
+    lcd.print(" ");
+  }
+  if (digitalRead(3) == HIGH) {
+    lcd.setCursor(2,3);
+    lcd.print("3");
+  } else {
+    lcd.setCursor(2,3);
+    lcd.print(" ");
+  }
+  if (digitalRead(4) == HIGH) {
+    lcd.setCursor(4,3);
+    lcd.print("4");
+  } else {
+    lcd.setCursor(4,3);
+    lcd.print(" ");
+  }
+  if (digitalRead(5) == HIGH) {
+    lcd.setCursor(6,3);
+    lcd.print("5");
+  } else {
+    lcd.setCursor(6,3);
+    lcd.print(" ");
+  }
+
 }
 
 void setup() {
   lcd.init();                      // initialize the lcd 
   indicator.begin(&lcd);
   persistent_data.begin(0x50, &Wire1);
-  pinMode(10, OUTPUT);
-
+  
+  pinMode(2, INPUT);
+  pinMode(3, INPUT);
+  pinMode(4, INPUT);
+  pinMode(5, INPUT);
   pinMode(14, INPUT_PULLUP);
   pinMode(15, INPUT_PULLUP);
   pinMode(16, INPUT_PULLUP);
@@ -130,9 +165,7 @@ void setup() {
   
   lcd.backlight();
   
-  switch_direction(NULL);
-  timer.every(20000, switch_direction);
-  timer.every(1000, tick_seconds);
+  switch_direction();
 
   // Set Product information
   NMEA2000.SetProductInformation("00000001", // Manufacturer's Model serial code
@@ -173,8 +206,15 @@ void SendN2kWindlass();
 
 void loop() {
   indicator.tick();
-  timer.tick();
-  check_buttons();
+  if (ScrollScheduler.IsTime()) {
+    ScrollScheduler.UpdateNextTime();
+    switch_direction();
+  }
+  if (SecondsScheduler.IsTime()) {
+    SecondsScheduler.UpdateNextTime();
+    tick_seconds();
+  }
+  handle_buttons();
   SendN2kWindlass();
   NMEA2000.ParseMessages();
 }
@@ -182,7 +222,6 @@ void loop() {
 uint8_t next_SID(uint8_t old_SID)
 {
   return (old_SID >= 252) ? 0 : old_SID + 1;
-  
 }
 
 uint8_t windlass_SID = 0xFF;
