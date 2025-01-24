@@ -12,45 +12,87 @@
 
 class MenuItem {
 public:
-    virtual std::string get_text() = 0;
+    virtual void draw(LiquidCrystal_I2C* lcd) { updated = false; };
+    virtual bool can_focus() = 0;
+
+    void set_updated() { updated = true; }
+    bool is_updated() { return updated; }
+
+private:
+    bool updated = true;
+};
+
+class TimeMenuItem : public MenuItem {
+public:
+    virtual bool can_focus() { return false; }
+    virtual void draw(LiquidCrystal_I2C* lcd) {
+        char output[10];
+        sprintf(output, "%02d:%02d:%02d", hrs, mins, secs);
+        lcd->print(output);
+        MenuItem::draw(lcd);
+    }
+
+    void set_time(int hrs, int mins, int secs) {
+        this->hrs = hrs; 
+        this->mins = mins; 
+        this->secs = secs; 
+        set_updated();
+    }
+
+private:
+    int hrs = 0;;
+    int mins = 0;;
+    int secs = 0;
+};
+
+class TitledMenuItem : public MenuItem {
 protected:
-    MenuItem(std::string title) {
+    TitledMenuItem(std::string title) {
         this->title = title;
     }
 
+    std::string get_title() {
+        return title;
+    }
+
+private:
     std::string title;
 };
 
-class NumericMenuItem : public MenuItem {
+class NumericMenuItem : public TitledMenuItem {
 public:
     NumericMenuItem(std::string title, std::string units, int initial_value) 
-        : MenuItem(title) {
+        : TitledMenuItem(title) {
         this->units = units;
         this->value = initial_value;
     }
 
-    virtual std::string get_text() {
-        auto buf = new char[ 20 ];
-        std::snprintf(buf, 20, "%s: %d %s", title.c_str(), value, units.c_str());
-        auto result = std::string(buf);
-        delete buf;
-        return result;
+    virtual void draw(LiquidCrystal_I2C* lcd) {
+        char buf[20];
+        std::snprintf(buf, 20, "%s: %d %s", get_title().c_str(), value, units.c_str());
+        lcd->print(buf);
+        MenuItem::draw(lcd);
     }
+
+    virtual bool can_focus() { return true; } 
 
 private:
     std::string units;
     int value;
 };
 
-class TextMenuItem : public MenuItem {
+class TextMenuItem : public TitledMenuItem {
 public:
     TextMenuItem(std::string title)
-        : MenuItem(title) {
+        : TitledMenuItem(title) {
     }
 
-    virtual std::string get_text() {
-        return title;
+    virtual void draw(LiquidCrystal_I2C* lcd) {
+        lcd->print(get_title().c_str());
+        MenuItem::draw(lcd);
     }
+
+    virtual bool can_focus() { return false; } 
 };
 
 class Menu {
@@ -68,6 +110,7 @@ private:
     LiquidCrystal_I2C* lcd;
     std::vector<MenuItem*> items;
     MenuItem* active_item;
+    bool changed = true;
 };
 
 #endif

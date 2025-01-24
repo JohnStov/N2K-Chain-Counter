@@ -1,9 +1,14 @@
 #include "menu.h"
 
 void Menu::display() {
-    lcd->clear();
-    for (size_t i = 0; i < items.size(); ++i) {
-        lcd->setCursor(0, i);
-        lcd->print(items[i]->get_text().c_str());
+    //if (changed)
+    {
+        for (size_t i = 0; i < items.size(); ++i) {
+            if (items[i]->is_updated()) {
+                lcd->setCursor(0, i);
+                items[i]->draw(lcd);
+            }
+        }
     }
+    changed = false;
 }
