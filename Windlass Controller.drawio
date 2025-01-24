@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0" version="26.0.4">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0" version="26.0.6">
   <diagram name="Page-1" id="UGcDYSqkJTcHJ47VY47h">
     <mxGraphModel dx="2074" dy="1078" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -10,7 +10,7 @@
         <mxCell id="lS47R74NGie7x5FfK5GM-2" value="&lt;div&gt;Arduino Due&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="60" y="360" width="490" height="240" as="geometry" />
         </mxCell>
-        <mxCell id="lS47R74NGie7x5FfK5GM-3" value="&lt;div&gt;ISO150&lt;br&gt;&lt;/div&gt;&lt;div&gt;CAN Bus driver&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="lS47R74NGie7x5FfK5GM-3" value="&lt;div&gt;ISO1050&lt;br&gt;&lt;/div&gt;&lt;div&gt;CAN Bus driver&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="420" y="220" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="lS47R74NGie7x5FfK5GM-5" value="&lt;div&gt;Opto-Isolated&lt;/div&gt;&lt;div&gt;Relay Module&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
