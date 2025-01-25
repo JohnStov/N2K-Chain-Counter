@@ -1,6 +1,7 @@
 #include <NMEA2000_CAN.h>
 #include <N2KMessages.h>
 #include <LiquidCrystal_I2C.h>
+#include "windlass.h"
 #include "menu.h"
 
 LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -8,11 +9,16 @@ LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for 
 auto time_menu_item = new TimeMenuItem();
 void set_time(int hrs, int mins, int secs) { time_menu_item->set_time(hrs, mins, secs); }
 
+uint32_t get_gypsy_circumference() { return 33; }
+uint32_t get_rode_length() { return 60; }
+Windlass windlass(get_gypsy_circumference, get_rode_length);
+auto windlass_menu_item = new WindlassMenuItem(&windlass);
+auto rode_length_menu_item = new RodeDeployedMenuItem(&windlass);
+
 Menu menu({
   time_menu_item,
-  new NumericMenuItem("Gypsy circ", "cm", 32),
-  new NumericMenuItem("Rode length", "m", 60),
-  new TextMenuItem("Item 4")
+  windlass_menu_item,
+  rode_length_menu_item,
 }, &lcd);
 
 class TimeMsgHandler : public tNMEA2000::tMsgHandler {

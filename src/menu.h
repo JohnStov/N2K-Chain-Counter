@@ -9,18 +9,7 @@
 #include <algorithm>
 #include <vector>
 #include <string>
-
-class MenuItem {
-public:
-    virtual void draw(LiquidCrystal_I2C* lcd) { updated = false; };
-    virtual bool can_focus() = 0;
-
-    void set_updated() { updated = true; }
-    bool is_updated() { return updated; }
-
-private:
-    bool updated = true;
-};
+#include "menu_item.h"
 
 class TimeMenuItem : public MenuItem {
 public:
@@ -29,34 +18,26 @@ public:
         char output[10];
         sprintf(output, "%02d:%02d:%02d", hrs, mins, secs);
         lcd->print(output);
-        MenuItem::draw(lcd);
+    }
+
+    virtual bool is_updated() {
+        bool result = updated;
+        updated = false;
+        return result;
     }
 
     void set_time(int hrs, int mins, int secs) {
         this->hrs = hrs; 
         this->mins = mins; 
-        this->secs = secs; 
-        set_updated();
+        this->secs = secs;
+        updated = true; 
     }
 
 private:
-    int hrs = 0;;
-    int mins = 0;;
+    int hrs = 0;
+    int mins = 0;
     int secs = 0;
-};
-
-class TitledMenuItem : public MenuItem {
-protected:
-    TitledMenuItem(std::string title) {
-        this->title = title;
-    }
-
-    std::string get_title() {
-        return title;
-    }
-
-private:
-    std::string title;
+    bool updated = false;
 };
 
 class NumericMenuItem : public TitledMenuItem {
@@ -71,10 +52,9 @@ public:
         char buf[20];
         std::snprintf(buf, 20, "%s: %d %s", get_title().c_str(), value, units.c_str());
         lcd->print(buf);
-        MenuItem::draw(lcd);
     }
 
-    virtual bool can_focus() { return true; } 
+    virtual bool can_focus() { return true; }
 
 private:
     std::string units;
@@ -89,7 +69,6 @@ public:
 
     virtual void draw(LiquidCrystal_I2C* lcd) {
         lcd->print(get_title().c_str());
-        MenuItem::draw(lcd);
     }
 
     virtual bool can_focus() { return false; } 
@@ -110,7 +89,6 @@ private:
     LiquidCrystal_I2C* lcd;
     std::vector<MenuItem*> items;
     MenuItem* active_item;
-    bool changed = true;
 };
 
 #endif

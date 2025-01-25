@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef __PESRSISTENT_DATA_H__
-#define __PESRSISTENT_DATA_H__
+#ifndef __PERSISTENT_DATA_H__
+#define __PERSISTENT_DATA_H__
 
 #include <Adafruit_FRAM_I2C.h>
 
