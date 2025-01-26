@@ -37,8 +37,7 @@ void Windlass::calculate_chain_speed() {
         chain_speed = 0;
     } else {
         uint32_t elapsed_millis = gypsy_movement_time[0] - gypsy_movement_time[1];
-        float cm_per_ms = (float)get_gypsy_circumference() / (float)elapsed_millis;
-        chain_speed = cm_per_ms * 10.0; // divide by 100 for m_per_ms then multiply by 1000 for m_per_s
+        chain_speed = (float)get_gypsy_circumference() / (float)elapsed_millis * 1000.0;
     }
 
     if (old_chain_speed != chain_speed)
@@ -111,13 +110,13 @@ void WindlassMenuItem::draw(LiquidCrystal_I2C* lcd) {
     switch (windlass->get_state())
     {
         case Windlass::FREEFALLING:
-            sprintf(text, "Freefall %4.1f m/s", windlass->get_chain_speed());
+            sprintf(text, "Freefall %4.1fm/s", windlass->get_chain_speed());
             break;
         case Windlass::DEPLOYING:
-            sprintf(text, "Deploy   %4.1f m/s", windlass->get_chain_speed());
+            sprintf(text, "Deploy   %4.1fm/s", windlass->get_chain_speed());
             break;
         case Windlass::RETRIEVING:
-            sprintf(text, "Retrieve %4.1f m/s", windlass->get_chain_speed());
+            sprintf(text, "Retrieve %4.1fm/s", windlass->get_chain_speed());
             break;
         case Windlass::STOPPED:
             strcpy(text, "Stopped           ");
@@ -139,8 +138,8 @@ RodeDeployedMenuItem::RodeDeployedMenuItem(Windlass* windlass) {
 bool RodeDeployedMenuItem::can_focus() { return false; }
 
 void RodeDeployedMenuItem::draw(LiquidCrystal_I2C* lcd) {
-    char text[18];
-    sprintf(text, "Rode Out:% 6.1fm", windlass->get_rode_deployed());
+    char text[19];
+    sprintf(text, "Rode Out:% 7.2fm", windlass->get_rode_deployed());
     lcd->print(text);
 }
 

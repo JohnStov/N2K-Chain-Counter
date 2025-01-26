@@ -70,8 +70,8 @@ private:
     uint32_t gypsy_movement_time[2] = { 0, 0 };
     float chain_speed;
     float rode_deployed = 0.0;
-    bool state_updated = true;
-    bool rode_updated = true;
+    bool state_updated = false;
+    bool rode_updated = false;
 };
 
 class WindlassMenuItem : public MenuItem {
