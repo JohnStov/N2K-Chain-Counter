@@ -3,15 +3,21 @@
 #include <LiquidCrystal_I2C.h>
 #include "windlass.h"
 #include "menu.h"
+#include "digital_in.h"
+#include "interrupt_pin.h"
 
 LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 auto time_menu_item = new TimeMenuItem();
-void set_time(int hrs, int mins, int secs) { time_menu_item->set_time(hrs, mins, secs); }
-
-uint32_t get_gypsy_circumference() { return 33; }
-uint32_t get_rode_length() { return 60; }
+float get_gypsy_circumference() { return 0.033; }
+float get_rode_length() { return 60.0; }
 Windlass windlass(get_gypsy_circumference, get_rode_length);
+InputPin power_pin(5, windlass.get_power_notifier());
+InputPin retrieve_pin(4, windlass.get_retrieve_notifier());
+InputPin deploy_pin(3, windlass.get_deploy_notifier());
+PinCollection pins({&power_pin, &retrieve_pin, &deploy_pin});
+InterruptPin<2> gypsy_sensor_pin(windlass.get_gypsy_notifier());
+
 auto windlass_menu_item = new WindlassMenuItem(&windlass);
 auto rode_length_menu_item = new RodeDeployedMenuItem(&windlass);
 
@@ -23,9 +29,9 @@ Menu menu({
 
 class TimeMsgHandler : public tNMEA2000::tMsgHandler {
 public:
-  TimeMsgHandler(void (*set_time_fn)(int, int, int)) :
+  TimeMsgHandler(ITimeReceiver* time_receiver) :
     tNMEA2000::tMsgHandler(126992L) {
-      set_time = set_time_fn;
+      this->time_receiver = time_receiver;
     }
 
   virtual void HandleMsg(const tN2kMsg &N2kMsg) {
@@ -39,12 +45,12 @@ public:
       int hours = systemTimeInt / 3600;
       int mins = (systemTimeInt - (hours * 3600)) / 60;
       int secs = systemTimeInt - (hours * 3600) - (mins * 60);
-      set_time(hours, mins, secs);
+      time_receiver->set_time(hours, mins, secs);
     }
   }
 
 private:
-  void (*set_time)(int, int, int);
+  ITimeReceiver* time_receiver;
 };
 
 void N2K_setup()
@@ -78,7 +84,7 @@ void N2K_setup()
   // Define OnOpen call back. This will be called, when CAN is open and system starts address claiming.
   //NMEA2000.SetOnOpen(OnN2kOpen);
 
-  NMEA2000.AttachMsgHandler(new TimeMsgHandler(set_time));
+  NMEA2000.AttachMsgHandler(new TimeMsgHandler(time_menu_item));
 
   NMEA2000.Open(); 
 }
@@ -108,7 +114,9 @@ void calculate_loop_time() {
 }
 
 void loop() {
+  pins.scan();
+  windlass.calculate_chain_speed();
   menu.display();
   NMEA2000.ParseMessages();
-  calculate_loop_time();
+  //calculate_loop_time();
 }

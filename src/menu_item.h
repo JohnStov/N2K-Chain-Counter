@@ -13,20 +13,14 @@ public:
     virtual void draw(LiquidCrystal_I2C* lcd) = 0;
     virtual bool can_focus() = 0;
 
-    virtual bool is_updated() { return false; };
-
-private:
+    virtual bool is_updated();
 };
 
 class TitledMenuItem : public MenuItem {
 protected:
-    TitledMenuItem(std::string title) {
-        this->title = title;
-    }
+    TitledMenuItem(std::string title);
 
-    std::string get_title() {
-        return title;
-    }
+    const std::string get_title();
 
 private:
     std::string title;

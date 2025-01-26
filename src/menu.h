@@ -11,27 +11,17 @@
 #include <string>
 #include "menu_item.h"
 
-class TimeMenuItem : public MenuItem {
+class ITimeReceiver {
 public:
-    virtual bool can_focus() { return false; }
-    virtual void draw(LiquidCrystal_I2C* lcd) {
-        char output[10];
-        sprintf(output, "%02d:%02d:%02d", hrs, mins, secs);
-        lcd->print(output);
-    }
+    virtual void set_time(int hrs, int mins, int secs) = 0;
+};
 
-    virtual bool is_updated() {
-        bool result = updated;
-        updated = false;
-        return result;
-    }
-
-    void set_time(int hrs, int mins, int secs) {
-        this->hrs = hrs; 
-        this->mins = mins; 
-        this->secs = secs;
-        updated = true; 
-    }
+class TimeMenuItem : public MenuItem, public ITimeReceiver {
+public:
+    virtual bool can_focus();
+    virtual void draw(LiquidCrystal_I2C* lcd);
+    virtual bool is_updated();
+    virtual void set_time(int hrs, int mins, int secs);
 
 private:
     int hrs = 0;
@@ -42,19 +32,9 @@ private:
 
 class NumericMenuItem : public TitledMenuItem {
 public:
-    NumericMenuItem(std::string title, std::string units, int initial_value) 
-        : TitledMenuItem(title) {
-        this->units = units;
-        this->value = initial_value;
-    }
-
-    virtual void draw(LiquidCrystal_I2C* lcd) {
-        char buf[20];
-        std::snprintf(buf, 20, "%s: %d %s", get_title().c_str(), value, units.c_str());
-        lcd->print(buf);
-    }
-
-    virtual bool can_focus() { return true; }
+    NumericMenuItem(std::string title, std::string units, int initial_value);
+    virtual void draw(LiquidCrystal_I2C* lcd);
+    virtual bool can_focus();
 
 private:
     std::string units;
@@ -63,27 +43,16 @@ private:
 
 class TextMenuItem : public TitledMenuItem {
 public:
-    TextMenuItem(std::string title)
-        : TitledMenuItem(title) {
-    }
-
-    virtual void draw(LiquidCrystal_I2C* lcd) {
-        lcd->print(get_title().c_str());
-    }
-
-    virtual bool can_focus() { return false; } 
+    TextMenuItem(std::string title);
+    virtual void draw(LiquidCrystal_I2C* lcd);
+    virtual bool can_focus();
 };
 
 class Menu {
 public:
-    Menu(std::vector<MenuItem*> items, LiquidCrystal_I2C* lcd) {
-        this->items = items;
-        this->lcd = lcd;
-        this->active_item = items[0];
-    }
-
+    Menu(std::vector<MenuItem*> items, LiquidCrystal_I2C* lcd);
     void display();
-    MenuItem* get_active_item() { return active_item; };
+    MenuItem* get_active_item();
 
 private:
     LiquidCrystal_I2C* lcd;

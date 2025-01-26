@@ -4,19 +4,18 @@
 #define __WINDLASS_H__
 
 #include <Arduino.h>
+#undef min
+#undef max
 #include "menu_item.h"
+#include "digital_in.h"
 
 
-typedef uint32_t (*gypsy_circumference_getter)();
-typedef uint32_t (*total_rode_getter)();
+typedef float (*gypsy_circumference_getter)();
+typedef float (*total_rode_getter)();
 
 class Windlass {
 public:
-    Windlass(gypsy_circumference_getter get_gypsy_circumference, total_rode_getter get_total_rode)
-    {
-        this->get_gypsy_circumference = get_gypsy_circumference;
-        this->get_total_rode = get_total_rode;
-    }
+    Windlass(gypsy_circumference_getter get_gypsy_circumference, total_rode_getter get_total_rode);
 
     enum WindlassState {
         POWER_OFF,
@@ -26,144 +25,62 @@ public:
         FREEFALLING
     };
 
-    WindlassState get_state() {
-        if (!power_on)
-            return POWER_OFF;
-        if (deploying)
-            return DEPLOYING;
-        if (retrieving)
-            return RETRIEVING;
-        if (get_chain_speed() > 0)
-            return FREEFALLING;
+    WindlassState get_state();
+    float get_chain_speed();
+    void calculate_chain_speed();
+    float get_rode_deployed();
+    bool is_state_updated();
+    bool is_rode_updated();
 
-        return POWER_OFF;
-    }
+    class Notifier : public IPinInputNotifier {
+    public:
+        Notifier(Windlass* windlass, bool* state_variable);
+        virtual void notify_input(bool state);
 
-    float get_chain_speed() { return chain_speed; }
+    private:
+        Windlass* windlass;
+        bool* state_variable;
+    };
 
-    void register_gypsy_revolution() 
-    {
-        float previous_rode_deployed = get_rode_deployed();
-        
-        gypsy_movement_time[1] = gypsy_movement_time[0];
-        gypsy_movement_time[0] = millis(); 
-
-        switch (get_state())
-        {
-            case RETRIEVING:
-                if (rode_deployed > 0.0) {
-                    rode_deployed -= get_gypsy_circumference();
-                }
-                break;
-            case DEPLOYING:
-            default:
-                if (rode_deployed < get_total_rode()) {
-                    rode_deployed += get_gypsy_circumference();
-                }
-                break;
-        }
-
-        if (get_rode_deployed() != previous_rode_deployed)
-            updated = true;
-    }
+    class GypsyRotationNotifier : public IPinInputNotifier {
+    public:
+        GypsyRotationNotifier(Windlass* windlass);
+        virtual void notify_input(bool state);
     
-    void calculate_chain_speed() {
-        uint32_t now = millis();
-        float old_chain_speed = chain_speed;
+    private:
+        Windlass* windlass;
+    };
 
-        if (gypsy_movement_time[0] == 0 || gypsy_movement_time[1] == 0) {
-            chain_speed = 0;
-        } else if (now - gypsy_movement_time[0] > 1000) {
-            gypsy_movement_time[0] = 0;
-            gypsy_movement_time[1] = 0;
-            chain_speed = 0;
-        } else {
-            uint32_t elapsed_millis = gypsy_movement_time[0] - gypsy_movement_time[1];
-            float cm_per_ms = (float)get_gypsy_circumference() / (float)elapsed_millis;
-            chain_speed = cm_per_ms * 10.0; // divide by 100 for m_per_ms then multiply by 1000 for m_per_s
-        }
-
-        if (old_chain_speed != chain_speed)
-            updated = true;
-    }
-
-    void set_power(bool power) { 
-        WindlassState old_state = get_state();
-        this->power_on = power; 
-        if (old_state != get_state())
-            updated = true; 
-    }
-    void set_deploying(bool deploying) 
-    { 
-        WindlassState old_state = get_state();
-        this->deploying = deploying; 
-        if (old_state != get_state())
-            updated = true; 
-    }
-
-    void set_retrieving(bool retrieving) {
-        WindlassState old_state = get_state();
-        this->retrieving = retrieving;  
-        updated = true; 
-        if (old_state != get_state())
-            updated = true; 
-    }
-
-    float get_rode_deployed() {
-        return rode_deployed;
-    }
-    
-    bool is_updated() {
-        bool result = updated; 
-        updated = false; 
-        return result;
-    } 
+    IPinInputNotifier* get_power_notifier() { return powerNotifier; }
+    IPinInputNotifier* get_deploy_notifier() { return deployNotifier; }
+    IPinInputNotifier* get_retrieve_notifier() { return retrieveNotifier; }
+    IPinInputNotifier* get_gypsy_notifier() { return gypsyNotifier; }
 
 private:
     gypsy_circumference_getter get_gypsy_circumference;
     total_rode_getter get_total_rode;
+    Notifier* powerNotifier;
+    Notifier* deployNotifier;
+    Notifier* retrieveNotifier;
+    GypsyRotationNotifier* gypsyNotifier;
+
     bool power_on = false;
     bool deploying = false;
     bool retrieving = false;
     uint32_t gypsy_movement_time[2] = { 0, 0 };
     float chain_speed;
     float rode_deployed = 0.0;
-    bool updated = true;
+    bool state_updated = true;
+    bool rode_updated = true;
 };
 
 class WindlassMenuItem : public MenuItem {
 public:
-    WindlassMenuItem(Windlass* windlass) {
-        this->windlass = windlass;
-    }
+    WindlassMenuItem(Windlass* windlass);
     
-    virtual bool can_focus() { return false; }
-
-    virtual void draw(LiquidCrystal_I2C* lcd) {
-        char text[19];
-        switch (windlass->get_state())
-        {
-            case Windlass::FREEFALLING:
-                sprintf(text, "Freefall %4.1f m/s", windlass->get_chain_speed());
-                break;
-            case Windlass::DEPLOYING:
-                sprintf(text, "Deploy   %4.1f m/s", windlass->get_chain_speed());
-                break;
-            case Windlass::RETRIEVING:
-                sprintf(text, "Retrieve %4.1f m/s", windlass->get_chain_speed());
-                break;
-            case Windlass::STOPPED:
-                strcpy(text, "Stopped");
-                break;
-            case Windlass::POWER_OFF:
-            default:
-                strcpy(text, "Power Off");
-                break;
-        }
-        lcd->print(text);
-    }
-
-    virtual bool is_updated() { return windlass->is_updated(); }
+    virtual bool can_focus();
+    virtual void draw(LiquidCrystal_I2C* lcd);
+    virtual bool is_updated();
 
 private:
     Windlass* windlass;
@@ -171,19 +88,11 @@ private:
 
 class RodeDeployedMenuItem : public MenuItem {
 public:
-    RodeDeployedMenuItem(Windlass* windlass) {
-        this->windlass = windlass;
-    }
+    RodeDeployedMenuItem(Windlass* windlass);
     
-    virtual bool can_focus() { return false; }
-
-    virtual void draw(LiquidCrystal_I2C* lcd) {
-        char text[18];
-        sprintf(text, "Rode Out:% 6.1fm", windlass->get_rode_deployed());
-        lcd->print(text);
-    }
-
-    virtual bool is_updated() { return windlass->is_updated(); }
+    virtual bool can_focus();
+    virtual void draw(LiquidCrystal_I2C* lcd);
+    virtual bool is_updated();
 
 private:
     Windlass* windlass;
