@@ -98,6 +98,9 @@ void setup() {
   Serial.begin(115200);
   Serial.write("Starting...\r\n");
   lcd.setCursor(0,0);
+
+  // To avoid spurious interrupts on startup, disable the gypsy interrupt handler untill now
+  gypsy_sensor_pin.start();
 }
 
 
