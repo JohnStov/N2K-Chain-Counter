@@ -5,6 +5,8 @@
 #include "menu.h"
 #include "digital_in.h"
 #include "interrupt_pin.h"
+#include "motor_control.h"
+#include "pin_usage.h"
 
 LiquidCrystal_I2C lcd(0x20, 20, 4, &Wire1);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
@@ -12,11 +14,15 @@ auto time_menu_item = new TimeMenuItem();
 float get_gypsy_circumference() { return 0.033; }
 float get_rode_length() { return 60.0; }
 Windlass windlass(get_gypsy_circumference, get_rode_length);
-InputPin power_pin(5, windlass.get_power_notifier());
-InputPin retrieve_pin(4, windlass.get_retrieve_notifier());
-InputPin deploy_pin(3, windlass.get_deploy_notifier());
-PinCollection pins({&power_pin, &retrieve_pin, &deploy_pin});
-InterruptPin<2> gypsy_sensor_pin(windlass.get_gypsy_notifier());
+MotorControl motor_control;
+PinCollection pins({
+  new InputPin (POWER_SENSE_PIN, &windlass),
+  new InputPin (RETRIEVE_SENSE_PIN, &windlass),
+  new InputPin (DEPLOY_SENSE_PIN, &windlass),
+  new InputPin (RETRIEVE_BUTTON_PIN, &motor_control),
+  new InputPin (DEPLOY_BUTTON_PIN, &motor_control),
+ });
+InterruptPin<2> gypsy_sensor_pin(&windlass);
 
 auto windlass_menu_item = new WindlassMenuItem(&windlass);
 auto rode_length_menu_item = new RodeDeployedMenuItem(&windlass);
@@ -120,6 +126,7 @@ void loop() {
   pins.scan();
   windlass.calculate_chain_speed();
   menu.display();
+  motor_control.set_output();
   NMEA2000.ParseMessages();
   //calculate_loop_time();
 }

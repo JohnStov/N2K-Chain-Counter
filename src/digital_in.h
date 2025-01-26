@@ -11,7 +11,7 @@
 
 class IPinInputNotifier {
 public:
-    virtual void notify_input(bool state) = 0;
+    virtual void notify_input(uint32_t pin, bool state) = 0;
 };
 
 class InputPin {
@@ -23,6 +23,8 @@ public:
 private:
     uint32_t pin;
     IPinInputNotifier* notifier;
+    uint32_t debounce_time = 0;
+    int debounce_value;
 };
 
 class PinCollection {

@@ -13,7 +13,7 @@
 typedef float (*gypsy_circumference_getter)();
 typedef float (*total_rode_getter)();
 
-class Windlass {
+class Windlass : public IPinInputNotifier {
 public:
     Windlass(gypsy_circumference_getter get_gypsy_circumference, total_rode_getter get_total_rode);
 
@@ -25,6 +25,8 @@ public:
         FREEFALLING
     };
 
+    virtual void notify_input(uint32_t pin, bool state);
+
     WindlassState get_state();
     float get_chain_speed();
     void calculate_chain_speed();
@@ -32,37 +34,9 @@ public:
     bool is_state_updated();
     bool is_rode_updated();
 
-    class Notifier : public IPinInputNotifier {
-    public:
-        Notifier(Windlass* windlass, bool* state_variable);
-        virtual void notify_input(bool state);
-
-    private:
-        Windlass* windlass;
-        bool* state_variable;
-    };
-
-    class GypsyRotationNotifier : public IPinInputNotifier {
-    public:
-        GypsyRotationNotifier(Windlass* windlass);
-        virtual void notify_input(bool state);
-    
-    private:
-        Windlass* windlass;
-    };
-
-    IPinInputNotifier* get_power_notifier() { return powerNotifier; }
-    IPinInputNotifier* get_deploy_notifier() { return deployNotifier; }
-    IPinInputNotifier* get_retrieve_notifier() { return retrieveNotifier; }
-    IPinInputNotifier* get_gypsy_notifier() { return gypsyNotifier; }
-
 private:
     gypsy_circumference_getter get_gypsy_circumference;
     total_rode_getter get_total_rode;
-    Notifier* powerNotifier;
-    Notifier* deployNotifier;
-    Notifier* retrieveNotifier;
-    GypsyRotationNotifier* gypsyNotifier;
 
     bool power_on = false;
     bool deploying = false;

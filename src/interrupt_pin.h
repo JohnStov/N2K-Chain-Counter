@@ -19,7 +19,7 @@ public:
 private:
     static void handler() {
         if (InterruptPin<pin>::handle_interrupts)
-            InterruptPin<pin>::notifier->notify_input(true);
+            InterruptPin<pin>::notifier->notify_input(pin, true);
     }
 
     static IPinInputNotifier* notifier;

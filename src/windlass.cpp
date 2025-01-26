@@ -1,13 +1,10 @@
 #include "windlass.h"
+#include "pin_usage.h"
 
 Windlass::Windlass(gypsy_circumference_getter get_gypsy_circumference, total_rode_getter get_total_rode)
 {
     this->get_gypsy_circumference = get_gypsy_circumference;
     this->get_total_rode = get_total_rode;
-    powerNotifier = new Notifier(this, &(this->power_on));
-    deployNotifier = new Notifier(this, &(this->deploying));
-    retrieveNotifier = new Notifier(this, &(this->retrieving));
-    gypsyNotifier = new GypsyRotationNotifier(this);
 }
 
 Windlass::WindlassState Windlass::get_state() {
@@ -60,43 +57,44 @@ bool Windlass::is_rode_updated() {
     return result;
 } 
 
-Windlass::Notifier::Notifier(Windlass* windlass, bool* state_variable) {
-    this->windlass = windlass;
-    this->state_variable = state_variable;
-}
-
-void Windlass::Notifier::notify_input(bool state) {
-    WindlassState old_state = windlass->get_state();
-    *state_variable = state; 
-    if (old_state != windlass->get_state())
-        windlass->state_updated = true; 
-}
-Windlass::GypsyRotationNotifier::GypsyRotationNotifier(Windlass* windlass) {
-    this->windlass = windlass;
-}
-
-void Windlass::GypsyRotationNotifier::notify_input(bool state) {
-    float previous_rode_deployed = windlass->get_rode_deployed();
-    
-    windlass->gypsy_movement_time[1] = windlass->gypsy_movement_time[0];
-    windlass->gypsy_movement_time[0] = millis(); 
-
-    switch (windlass->get_state())
+void Windlass::notify_input(uint32_t pin, bool state) {
+    if (pin == POWER_SENSE_PIN || pin == RETRIEVE_SENSE_PIN || pin == GYPSY_SENSE_PIN)
     {
-        case RETRIEVING:
-            if (windlass->rode_deployed > 0.0) {
-                windlass->rode_deployed -= windlass->get_gypsy_circumference();
-            }
-            break;
-        default:
-            if (windlass->rode_deployed < windlass->get_total_rode()) {
-                windlass->rode_deployed += windlass->get_gypsy_circumference();
-            }
-            break;
-    }
+        WindlassState old_state = get_state();
 
-    if (windlass->get_rode_deployed() != previous_rode_deployed)
-        windlass->rode_updated = true;
+        if (pin == POWER_SENSE_PIN)
+            power_on = state;
+        else if (pin == DEPLOY_SENSE_PIN)
+            deploying = state;
+        else if (pin == RETRIEVE_SENSE_PIN)
+            retrieving = state;
+
+        if (old_state != get_state())
+            state_updated = true;
+    } else if (pin == GYPSY_SENSE_PIN) {
+        float previous_rode_deployed = get_rode_deployed();
+        
+        gypsy_movement_time[1] = gypsy_movement_time[0];
+        gypsy_movement_time[0] = millis(); 
+
+        switch (get_state())
+        {
+            case RETRIEVING:
+                if (rode_deployed > 0.0) {
+                    rode_deployed -= get_gypsy_circumference();
+                }
+                break;
+            default:
+                if (rode_deployed < get_total_rode()) {
+                    rode_deployed += get_gypsy_circumference();
+                }
+                break;
+        }
+
+        if (get_rode_deployed() != previous_rode_deployed)
+            rode_updated = true;
+
+    }
 }
 
 WindlassMenuItem::WindlassMenuItem(Windlass* windlass) {
